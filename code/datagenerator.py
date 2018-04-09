@@ -68,11 +68,11 @@ class DataGenerator(Sequence):
         'Generate one batch of data'
         # Generate indexes of the batch
         print('batch number: {}'.format(batch_no))
-        indexes = self.indexes[batch_no*self.batch_size:(batch_no+1)*self.batch_size]
-
+        ind = self.indexes[batch_no*self.batch_size:(batch_no+1)*self.batch_size]
+        print('batch indexes: {}'.format(ind))
         # Find list of IDs
-        list_IDs_temp = [self.list_IDs[k] for k in indexes]
-
+        list_IDs_temp = [self.list_IDs[k] for k in ind]
+        print('temp image ids: {}'.format(list_IDs_temp))
         # Generate data
         X, y = self.__data_generation(list_IDs_temp)
 
@@ -82,7 +82,7 @@ class DataGenerator(Sequence):
         'Updates indexes after each epoch'
         self.indexes = np.arange(len(self.list_IDs))
         print('indexes: {}'.format(self.indexes))
-        if self.shuffle == True:
+        if self.shuffle:
             np.random.shuffle(self.indexes)
             print('shuffled indexes: {}'.format(self.indexes))
 
@@ -156,6 +156,5 @@ model_multi_gpu.compile(optimizer=Adam(lr=initial_lr), loss=unweighted_binary_cr
 
 model_multi_gpu.fit_generator(generator=DataGenerator(partition['train'],labels, current_state='train'),epochs=3, verbose=2, workers=1, shuffle=False)
 
-model_multi_gpu.fit_generator(generator=DataGenSequence(labels, partition['train'], current_state='train', batch_size=4), epochs=epochs, verbose=1)
 
 
