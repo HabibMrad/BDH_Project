@@ -7,6 +7,7 @@
 # 3) images/test_filtered.pkl : list of non blacklisted test images
 
 # In[1]:
+#4212018654
 
 
 from torch.utils.data import DataLoader, Dataset
@@ -54,7 +55,7 @@ def get_vector_labels(imagepath= '../data/images/', is_test = False):
     ## INPUT : ('../data/images/, True)
     ## OUTPUT :
 
-#         img_filename	             vector
+#         img_filename               vector
 # 44187   00013774_026.png    [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 # 44188   00013774_028.png    [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 
@@ -119,7 +120,7 @@ class XRayDataset(Dataset):
         img_name = os.path.join(self.imagepath,
                                 self.df.iloc[idx, 0])
         image = Image.open(img_name).convert('RGB')
-        labels = torch.FloatTensor(train_df[train_df['img_filename'] == train_df.iloc[idx, 0]]['vector'].values[0])
+        labels = torch.FloatTensor(self.df[self.df['img_filename'] == self.df.iloc[idx, 0]]['vector'].values[0])
         #labels = torch.FloatTensor(np.array([0]*14))
 
         if self.transform is not None:
@@ -259,11 +260,11 @@ if __name__ == '__main__':
     WIDTH = 224
     HEIGHT = 224
     LR = 0.0001
-    EPOCHS = 1
+    EPOCHS = 10
     # Can scale to max for inference but for training LR will be affected
     # Prob better to increase this though on P100 since LR is not too low
     # Easier to see when plotted
-    BATCHSIZE = 16 #64*2
+    BATCHSIZE = 64 #64*2
     IMAGENET_RGB_MEAN = [0.485, 0.456, 0.406]
     IMAGENET_RGB_SD = [0.229, 0.224, 0.225]
     imagepath = '../data/images/'
@@ -297,20 +298,23 @@ if __name__ == '__main__':
                                 normalize]))
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=BATCHSIZE,
-                              shuffle=True, num_workers=4, pin_memory=False)
+                              shuffle=True, num_workers=24, pin_memory=False)
 
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=8*BATCHSIZE,
-                              shuffle=False, num_workers=0, pin_memory=False)
+                              shuffle=False, num_workers=24, pin_memory=False)
 
     test_loader = DataLoader(dataset=test_dataset, batch_size=8*BATCHSIZE,
-                             shuffle=False, num_workers=0, pin_memory=False)
+                             shuffle=False, num_workers=24, pin_memory=False)
     #load pickled model instead of downloading, no internet in Gatech!
     with open('densenet_model.pkl', 'rb') as f:
         azure_chest_xray_sym = pickle.load(f)
     print('model loaded')
+    azure_chest_xray_sym.cuda()
+
     optimizer, criterion, scheduler = init_symbol(azure_chest_xray_sym)
 
     loss_min = float("inf")
+    valid_loss = []
 
     # No-training
     valid_epoch(azure_chest_xray_sym, valid_loader, criterion, -1)
@@ -321,6 +325,7 @@ if __name__ == '__main__':
         print('training epoch:',j)
         train_epoch(azure_chest_xray_sym, train_loader, optimizer, criterion, j)
         loss_val = valid_epoch(azure_chest_xray_sym, valid_loader, criterion, j)
+        valid_loss.append(loss_val)
     #     test_loss_val = valid_epoch(azure_chest_xray_sym, test_loader, criterion, j, 'testing')
         # LR Schedule
         scheduler.step(loss_val)
@@ -330,7 +335,8 @@ if __name__ == '__main__':
         if j == max(range(EPOCHS)):
             print("last epoch. Saving ...")
             loss_min = loss_val
-            torch.save(azure_chest_xray_sym, 'best_azure_chest_xray_model_4-5-18.pth.tar')
+            torch.save(azure_chest_xray_sym, 'Model_65_10_4-21-18.model')
+            pd.DataFrame(valid_loss).to_csv("valid_loss_65_10_4-21-18.csv")
         etime = time.time()
         print("Epoch time: {0:.0f} seconds".format(etime-stime))
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
