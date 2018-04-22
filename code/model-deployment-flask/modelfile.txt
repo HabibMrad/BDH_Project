@@ -1,1 +1,4 @@
 insert model here
+
+How to run: From cmd, python api.py
+Then open browser and run on http://localhost:8000
