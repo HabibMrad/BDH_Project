@@ -7,7 +7,7 @@
 # 3) images/test_filtered.pkl : list of non blacklisted test images
 
 # In[1]:
-#4212018654
+#4222018135
 
 
 from torch.utils.data import DataLoader, Dataset
@@ -260,7 +260,7 @@ if __name__ == '__main__':
     WIDTH = 224
     HEIGHT = 224
     LR = 0.0001
-    EPOCHS = 10
+    EPOCHS = 50
     # Can scale to max for inference but for training LR will be affected
     # Prob better to increase this though on P100 since LR is not too low
     # Easier to see when plotted
@@ -335,8 +335,8 @@ if __name__ == '__main__':
         if j == max(range(EPOCHS)):
             print("last epoch. Saving ...")
             loss_min = loss_val
-            torch.save(azure_chest_xray_sym, 'Model_65_10_4-21-18.model')
-            pd.DataFrame(valid_loss).to_csv("valid_loss_65_10_4-21-18.csv")
+            torch.save(azure_chest_xray_sym, 'Model_65_50_4-22-18.model')
+            pd.DataFrame(valid_loss).to_csv("valid_loss_65_50_4-22-18.csv")
         etime = time.time()
         print("Epoch time: {0:.0f} seconds".format(etime-stime))
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
