@@ -42,7 +42,10 @@ def make_prediction():
         # read in file as raw pixels values
         # (ignore extra alpha channel and reshape as its a single image)
         #img = misc.imread(file)
+
         img_pil = Image.open(file)
+        #img_cv = cv2.imread(file)
+
         img_pil.thumbnail((224,224),Image.ANTIALIAS)
         img_pil_processed = preprocess(img_pil)
         img_pil_input = Variable(img_pil_processed.unsqueeze(0))
@@ -54,7 +57,7 @@ def make_prediction():
         h_x = (result).data.squeeze()
         probs, idx = h_x.sort(0, True)
 
-        label = [(probs[i], set_labels[idx[i]]) for i in range(0,14)]
+        label = pd.DataFrame([(set_labels[idx[i]], probs[i]) for i in range(0,14)], columns = ["Disease", "Probability"])
 
 
 
@@ -70,7 +73,7 @@ def make_prediction():
 		# switch for case where label=10 and number=0
 		#if label=='10': label='0'
 
-        return render_template('index.html', label=label)
+        return render_template('index.html', label=label.to_html())
 
 
 if __name__ == '__main__':
