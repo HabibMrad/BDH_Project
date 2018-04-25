@@ -1,17 +1,13 @@
 import flask
 from flask import Flask, request, render_template
-from sklearn.externals import joblib
 import numpy as np
-from scipy import misc
 
 import torch
-import cv2
 from PIL import Image
-from matplotlib.pyplot import imshow
-import numpy as np
 from torchvision import transforms
 from torch.autograd import Variable
-import pandas as pd
+import torchvision.models as models
+import torch.nn as nn
 
 app = Flask(__name__)
 
@@ -24,6 +20,18 @@ preprocess = transforms.Compose([
    transforms.ToTensor(),
    normalize
 ])
+
+def get_symbol(out_features=14, multi_gpu=False):
+    model = models.densenet.densenet121(pretrained=True)
+    # Replace classifier (FC-1000) with (FC-14)
+    model.classifier = nn.Sequential(
+        nn.Linear(model.classifier.in_features, out_features), 
+        nn.Sigmoid())
+    if multi_gpu:
+        model = nn.DataParallel(model)
+    # CUDA
+    model.cuda()  
+    return model
 
 @app.route("/")
 @app.route("/index")
@@ -76,6 +84,9 @@ def make_prediction():
 if __name__ == '__main__':
 	# load ml model
 	#model = joblib.load('model.pkl')
-    model = torch.load("Model_65_10_4-21-18.model", map_location=lambda storage, loc: storage)
+      
+    model = get_symbol()
+    saved_model = torch.load("../Model_65_10_4-21-18.model", map_location=lambda storage, loc: storage)
+    model.load_state_dict(saved_model.state_dict())
     # start api
     app.run(host='0.0.0.0', port=8000, debug=True)
